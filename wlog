@@ -9,49 +9,51 @@ showdayafter=$((20*60*60))
 # TODO arguments for settings or interactive
 
 gui() {
-	zenity --attach 99999 "$@" 2>/dev/null
 	# invalid parent makes the dialog standalone.
-	# This (and theme warnings) create noise which we silence.
+	# Silence warnings about the parent hack and gtk theme.
+	zenity --attach 99999 "$@" 2>/dev/null
 }
 
 touch "$file" 2>/dev/null || {
 	gui --error "Cannot create or modify \"$file\""
 	exit 1
 }
-lastwrote=`date '+%s'`
-sleep $interval
+last_u=`date '+%s'`
+
 while true; do
-	now_u=`date '+%s'`
-	since=`date '+%H:%M' "--date=@$lastwrote"`
-	if [ $(($now_u-$lastwrote)) -ge $showdayafter ]; then # add weekday
-		since=`date '+%H:%M på %A' "--date=@$lastwrote"`
+	last_f=`date '+%H:%M' "--date=@$last_u"`
+	text="Hva har du gjort siden $last_f?"
+	asked_u=`date '+%s'`
+	if [ $(($asked_u-$last_u)) -ge $showdayafter ]; then # add weekday
+		last_f=`date '+%H:%M på %A' "--date=@$last_f"`
 	fi
-	text="Hva har du gjort siden $since?"
-	now_t=`date '+%H:%M' "--date=@$now_u"`
-	title="Arbeidslogg $now_t" # long titles will be truncated,
+	asked_f=`date '+%H:%M' "--date=@$asked_u"`
+	title="Arbeidslogg $asked_f" # long titles would be truncated,
 	# making the window wider doesn't increase the length of the text box
 
 	did=`gui --entry --title "$title" --text "$text" --timeout $maxwait \
-	                 --ok-label 'Lagre' --cancel-label 'Vent'`
+	                 --ok-label 'Lagre' --cancel-label 'Lagre'`
+	                 # seems like I accidentally hit cancel a few times
 	ret=$? # save exit code
+	answered_u=`date '+%s'`
+	echo -n "$ret; "
 	if [ $ret -eq 5 ]; then # timeout
 		sleep $timeoutretry
-	elif [[ $ret -ne 0 || -z "$did" ]]; then # canceled -> snooze
+	elif [[ -z "$did" ]]; then # canceled -> snooze
 		sleep $emptyretry
 	elif [[ "${did:0:5}" == 'vent ' ]]; then # custom snooze
-		echo ${did:5}
 		sleep ${did:5}m 2>/dev/null \
 			|| gui --error --text "minutter: \"${did:5}\" er ikke et positivt tall"
 	else
-		echo ${did:0:5}
-		from=`date '+%m/%d %H:%M' "--date=@$lastwrote"`
-		to=`date '+%m/%d %H:%M' "--date=@$now_u"`
-		echo "$from - $to: $did" >>"$file" 2>/dev/null
+		from=`date '+%d/%m %H:%M' --date "@$last_u"`
+		to=`date '+%d/%m %H:%M' --date "@$answered_u"`
+		echo "$from - $to: $did"
+		echo "$from - $to: $did" >> "$file"
 		if [ $? -ne 0 ]; then
 			gui --error --text "Kunne ikke skrive til \"$file\"!"
 			# discard it
 		else
-			lastwrote=$now_u
+			last_u=$answered_u
 		fi
 		sleep $interval
 	fi
