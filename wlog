@@ -5,6 +5,7 @@ maxwait=$((30*60))
 emptyretry=$((5*60))
 timeoutretry=$((30*60))
 showdayafter=$((20*60*60))
+showdateafter=$((6*24*60*60))
 
 gui() {
 	# invalid parent makes the dialog standalone.
@@ -20,22 +21,28 @@ elif [[ $# -gt 1 ]]; then
 	exit 2;
 fi
 
-touch "$file" 2>/dev/null || {
-	gui --error "Cannot create or modify \"$file\""
-	exit 1
-}
-last_u=`date '+%s'`
+# use modification date of $file and fall back to one hour ago
+# modification date might get clobbered, but this is simpler and less brittle
+# than parsing the file.
+last_u=`date '+%s' --reference "$file" 2>/dev/null \
+	|| date '+%s' --date='1 hour ago'`
 
 while true; do
-	last_f=`date '+%H:%M' "--date=@$last_u"`
-	text="What have you been doing since $last_f?"
 	asked_u=`date '+%s'`
-	if [ $(($asked_u-$last_u)) -ge $showdayafter ]; then # add weekday
-		last_f=`date '+%H:%M on %A' "--date=@$last_f"`
-	fi
 	asked_f=`date '+%H:%M' "--date=@$asked_u"`
 	title="Worklog $asked_f" # long titles would be truncated,
 	# making the window wider doesn't increase the length of the text box
+
+	seconds=$(($asked_u-$last_u))
+	if [[ $seconds -ge $showdateafter || $seconds -lt 0 ]]; then
+		format='+%A %-d. %B %H:%M'
+	elif [[ $seconds -ge $showdayafter ]]; then
+		format='+%H:%M on %A'
+	else
+		format='+%H:%M'
+	fi
+	last_f=`date "$format" "--date=@$last_u"`
+	text="What have you been doing since $last_f?"
 
 	did=`gui --entry --title "$title" --text "$text" --timeout $maxwait \
 	                 --ok-label 'Save' --cancel-label 'Wait'`
@@ -43,7 +50,7 @@ while true; do
 	ret=$? # save exit code
 	answered_u=`date '+%s'`
 	echo -n "$ret; "
-	if [ $ret -eq 5 ]; then # timeout
+	if [[ $ret -eq 5 ]]; then # timeout
 		sleep $timeoutretry
 	elif [[ -z "$did" ]]; then # canceled -> snooze
 		sleep $emptyretry
@@ -56,11 +63,11 @@ while true; do
 		echo "$from - $to: $did"
 		echo "$from - $to: $did" >> "$file"
 		if [ $? -ne 0 ]; then
-			gui --error --text "Cannot write to \"$file\"!"
-			# discard it
-		else
-			last_u=$answered_u
+			gui --error --text "Cannot write to \"$file\", stopping!"
+			# discard the message
+			exit 1
 		fi
+		last_u=$answered_u
 		sleep $interval
 	fi
 done
