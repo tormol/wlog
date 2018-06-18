@@ -1,5 +1,6 @@
 #!/bin/bash
 file="$HOME/worklog"
+icon='/usr/share/icons/gnome/32x32/apps/accessories-text-editor.png'
 interval=$((60*60))
 maxwait=$((30*60))
 emptyretry=$((5*60))
@@ -10,7 +11,7 @@ showdateafter=$((6*24*60*60))
 gui() {
 	# invalid parent makes the dialog standalone.
 	# Silence warnings about the parent hack and gtk theme.
-	zenity --attach 99999 "$@" 2>/dev/null
+	zenity --attach 99999 --window-icon "$icon" "$@" 2>/dev/null
 }
 
 # TODO more arguments for settings or interactive
