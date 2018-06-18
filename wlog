@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-file="$HOME/worklog"
+file="$HOME/arbeidslogg"
 icon='/usr/share/icons/gnome/32x32/apps/accessories-text-editor.png'
 interval=$((60*60))
 maxwait=$((30*60))
@@ -47,22 +47,22 @@ last_u=`date '+%s' --reference "$file" 2>/dev/null \
 while true; do
 	asked_u=`date '+%s'`
 	asked_f=`date '+%H:%M' "--date=@$asked_u"`
-	title="Worklog $asked_f" # long titles would be truncated,
+	title="Arbeidslogg $asked_f" # long titles would be truncated,
 	# making the window wider doesn't increase the length of the text box
 
 	seconds=$(($asked_u-$last_u))
 	if [[ $seconds -ge $showdateafter || $seconds -lt 0 ]]; then
 		format='+%A %-d. %B %H:%M'
 	elif [[ $seconds -ge $showdayafter ]]; then
-		format='+%H:%M on %A'
+		format='+%H:%M på %A'
 	else
 		format='+%H:%M'
 	fi
 	last_f=`date "$format" "--date=@$last_u"`
-	text="What have you been doing since $last_f?"
+	text="Hva har du gjort siden $last_f?"
 
 	did=`gui --entry --title "$title" --text "$text" --timeout $maxwait \
-	                 --ok-label 'Save' --cancel-label 'Wait'`
+	                 --ok-label 'Lagre' --cancel-label 'Vent'`
 	                 # seems like I accidentally hit cancel a few times
 	ret=$? # save exit code
 	answered_u=`date '+%s'`
@@ -71,16 +71,16 @@ while true; do
 		sleep $timeoutretry
 	elif [[ -z "$did" ]]; then # canceled -> snooze
 		sleep $emptyretry
-	elif [[ "${did:0:5}" == 'wait ' ]]; then # custom snooze
+	elif [[ "${did:0:5}" == 'vent ' ]]; then # custom snooze
 		sleep ${did:5}m 2>/dev/null \
-			|| gui --error --text "minutes: \"${did:5}\" is not a positive number"
+			|| gui --error --text "minutter: \"${did:5}\" er ikke et positivt tall"
 	else
 		from=`date '+%d/%m %H:%M' --date "@$last_u"`
 		to=`date '+%d/%m %H:%M' --date "@$answered_u"`
 		echo "$from - $to: $did"
 		echo "$from - $to: $did" >> "$file"
 		if [ $? -ne 0 ]; then
-			gui --error --text "Cannot write to \"$file\", stopping!"
+			gui --error --text "Kunne ikke skrive til \"$file\", avslutter!"
 			# discard the message
 			exit 1
 		fi
