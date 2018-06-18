@@ -1,0 +1,20 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Type=Application
+# Might need absolute path
+Exec=wlog
+Terminal=false
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Icon=/usr/share/icons/gnome/32x32/apps/accessories-text-editor.png 
+Icon[en_US]=/usr/share/icons/gnome/32x32/apps/accessories-text-editor.png 
+Icon[nb_NO]=/usr/share/icons/gnome/32x32/apps/accessories-text-editor.png 
+Name=worklog
+Name[en_US]=worklog
+Name[nb_NO]=arbeidslogg
+Comment=Tries to make one think about what one spent the last hour on
+Comment[en_US]=Tries to make one think about what one spent the last hour on
+Comment[nb_NO]=Prøver å få en til å tenke over hva man har fått ut av den siste timen
+
