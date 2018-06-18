@@ -6,13 +6,19 @@ emptyretry=$((5*60))
 timeoutretry=$((30*60))
 showdayafter=$((20*60*60))
 
-# TODO arguments for settings or interactive
-
 gui() {
 	# invalid parent makes the dialog standalone.
 	# Silence warnings about the parent hack and gtk theme.
 	zenity --attach 99999 "$@" 2>/dev/null
 }
+
+# TODO more arguments for settings or interactive
+if [[ $# -eq 1 ]]; then
+	file="$1"
+elif [[ $# -gt 1 ]]; then
+	echo "Usage: $0 [file]" >&2;
+	exit 2;
+fi
 
 touch "$file" 2>/dev/null || {
 	gui --error "Cannot create or modify \"$file\""
