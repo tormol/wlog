@@ -32,7 +32,7 @@ while true; do
 	# making the window wider doesn't increase the length of the text box
 
 	did=`gui --entry --title "$title" --text "$text" --timeout $maxwait \
-	                 --ok-label 'Lagre' --cancel-label 'Lagre'`
+	                 --ok-label 'Lagre' --cancel-label 'Vent'`
 	                 # seems like I accidentally hit cancel a few times
 	ret=$? # save exit code
 	answered_u=`date '+%s'`
